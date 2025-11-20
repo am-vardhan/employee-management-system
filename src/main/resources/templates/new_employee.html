@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Add Employee</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f3;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 40%;
+            margin: 40px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px #b5b5b5;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0 20px 0;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #0066ff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0047b3;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h2>Add New Employee</h2>
+
+    <form th:action="@{/saveEmployee}" th:object="${employee}" method="post">
+
+        <label>Name</label>
+        <input type="text" th:field="*{name}" placeholder="Enter name" required>
+
+        <label>Email</label>
+        <input type="email" th:field="*{email}" placeholder="Enter email" required>
+
+        <label>Department</label>
+        <input type="text" th:field="*{department}" placeholder="Enter department" required>
+
+        <label>Salary</label>
+        <input type="number" th:field="*{salary}" step="0.01" placeholder="Enter salary" required>
+
+        <label>Designation</label>
+        <input type="text" th:field="*{designation}" placeholder="Enter designation" required>
+
+        <button type="submit">Save Employee</button>
+
+    </form>
+</div>
+
+</body>
+</html>
