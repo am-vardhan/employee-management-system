@@ -36,8 +36,9 @@
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc11</artifactId>
-            <version>23.1.0.0</version>
+            <version>21.9.0.0</version>
         </dependency>
+        
         <!-- DevTools (optional for hot reload) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
