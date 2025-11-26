@@ -10,10 +10,6 @@ pipeline {
         timestamps()
     }
 
-    triggers {
-        // No automatic triggers — full manual control
-    }
-
     stages {
 
         stage("Checkout") {
