@@ -65,12 +65,18 @@ Click 'Deploy Now' to proceed.
             steps {
                 script {
 
-                    echo "Deploying ${env.BRANCH_NAME} build to Tomcat..."
+                    echo "Deploying ${env.BRANCH_NAME} WAR to Tomcat..."
+
+                    def warPath = "${WORKSPACE}/target/ems-0.0.1-SNAPSHOT.war"
 
                     ansiblePlaybook playbook: "/opt/ansible/deploy-tomcat.yml",
                                     inventory: "/opt/ansible/hosts",
                                     become: true,
-                                    becomeUser: "root"
+                                    becomeUser: "root",
+                                    extraVars: [
+                                        war_source: warPath,
+                                        branch_name: env.BRANCH_NAME
+                                    ]
                 }
             }
         }
