@@ -10,6 +10,12 @@ pipeline {
         timestamps()
     }
 
+    options {
+    disableConcurrentBuilds()
+    timestamps()
+    }
+
+
     environment {
         APP_NAME     = "ems"
         GROUP_ID     = "com.example"
