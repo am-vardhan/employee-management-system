@@ -10,6 +10,15 @@ pipeline {
         timestamps()
     }
 
+    environment {
+        APP_NAME     = "ems"
+        GROUP_ID     = "com.example"
+        ARTIFACT_ID  = "ems"
+        VERSION      = "0.0.1-SNAPSHOT"
+        NEXUS_URL    = "http://localhost:8081"
+        NEXUS_REPO   = "maven-snapshots"
+    }
+
     stages {
 
         stage("Checkout") {
@@ -21,62 +30,62 @@ pipeline {
 
         stage("Manual Build Trigger") {
             steps {
-                script {
-                    input message: """
-🛠  Build Confirmation Required
+                input message: """
+🛠 Build Confirmation Required
 
-Branch selected: ${env.BRANCH_NAME.toUpperCase()}
+Branch: ${env.BRANCH_NAME}
 
 Click 'Start Build' to continue.
 """, ok: "Start Build"
-                }
             }
         }
 
-        stage('Build') {
+        stage("Build & Package") {
             steps {
                 echo "Building Maven project..."
                 sh 'mvn -B clean package'
             }
         }
 
-        stage('Upload to Nexus') {
+        stage("Upload to Nexus") {
             steps {
-                echo "Uploading package to Nexus..."
-                sh 'mvn -B clean deploy'
+                echo "Publishing WAR to Nexus..."
+                sh 'mvn -B deploy -DskipTests'
             }
         }
 
-        stage('Manual Deploy Approval') {
+        stage("Manual Deploy Approval") {
             steps {
-                script {
-                    input message: """
-🚀 Deployment Approval Needed
+                input message: """
+🚀 Deployment Approval Required
 
-Do you want to deploy this build from branch: ${env.BRANCH_NAME} ?
+Deploy artifact from Nexus for branch:
+${env.BRANCH_NAME}
 
-Click 'Deploy Now' to proceed.
+Click 'Deploy Now' to continue.
 """, ok: "Deploy Now"
-                }
             }
         }
 
-        stage('Deploy to Tomcat') {
+        stage("Deploy to Tomcat (From Nexus)") {
             steps {
                 script {
+                    echo "Deploying WAR from Nexus..."
 
-                    echo "Deploying ${env.BRANCH_NAME} WAR to Tomcat..."
-
-                    def warPath = "${WORKSPACE}/target/ems-0.0.1-SNAPSHOT.war"
-
-                    ansiblePlaybook playbook: "/opt/ansible/deploy-tomcat.yml",
-                                    inventory: "/opt/ansible/hosts",
-                                    become: true,
-                                    becomeUser: "root",
-                                    extraVars: [
-                                        war_source: warPath,
-                                        branch_name: env.BRANCH_NAME
-                                    ]
+                    ansiblePlaybook(
+                        playbook: "/opt/ansible/deploy-tomcat.yml",
+                        inventory: "/opt/ansible/hosts",
+                        become: true,
+                        becomeUser: "root",
+                        extraVars: [
+                            nexus_url   : env.NEXUS_URL,
+                            nexus_repo  : env.NEXUS_REPO,
+                            group_id    : env.GROUP_ID,
+                            artifact_id : env.ARTIFACT_ID,
+                            version     : env.VERSION,
+                            branch_name : env.BRANCH_NAME
+                        ]
+                    )
                 }
             }
         }
