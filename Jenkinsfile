@@ -28,18 +28,6 @@ pipeline {
             }
         }
 
-        stage("Manual Build Trigger") {
-            steps {
-                input message: """
-🛠 Build Confirmation Required
-
-Branch: ${env.BRANCH_NAME}
-
-Click 'Start Build' to continue.
-""", ok: "Start Build"
-            }
-        }
-
         stage("Build & Package") {
             steps {
                 echo "Building Maven project..."
@@ -49,44 +37,31 @@ Click 'Start Build' to continue.
 
         stage("Upload to Nexus") {
             steps {
-                echo "Publishing WAR to Nexus..."
                 sh 'mvn -B deploy -DskipTests'
             }
         }
 
-        stage("Manual Deploy Approval") {
-            steps {
-                input message: """
-🚀 Deployment Approval Required
-
-Deploy artifact from Nexus for branch:
-${env.BRANCH_NAME}
-
-Click 'Deploy Now' to continue.
-""", ok: "Deploy Now"
+        stage("Deploy to Tomcat (Auto for develop)") {
+            when {
+                branch 'develop'
             }
-        }
-
-        stage("Deploy to Tomcat (From Nexus)") {
             steps {
-                script {
-                    echo "Deploying WAR from Nexus..."
+                echo "Auto deploying develop branch from Nexus..."
 
-                    ansiblePlaybook(
-                        playbook: "/opt/ansible/deploy-tomcat.yml",
-                        inventory: "/opt/ansible/hosts",
-                        become: true,
-                        becomeUser: "root",
-                        extraVars: [
-                            nexus_url   : env.NEXUS_URL,
-                            nexus_repo  : env.NEXUS_REPO,
-                            group_id    : env.GROUP_ID,
-                            artifact_id : env.ARTIFACT_ID,
-                            version     : env.VERSION,
-                            branch_name : env.BRANCH_NAME
-                        ]
-                    )
-                }
+                ansiblePlaybook(
+                    playbook: "/opt/ansible/deploy-tomcat.yml",
+                    inventory: "/opt/ansible/hosts",
+                    become: true,
+                    becomeUser: "root",
+                    extraVars: [
+                        nexus_url   : env.NEXUS_URL,
+                        nexus_repo  : env.NEXUS_REPO,
+                        group_id    : env.GROUP_ID,
+                        artifact_id : env.ARTIFACT_ID,
+                        version     : env.VERSION,
+                        branch_name : env.BRANCH_NAME
+                    ]
+                )
             }
         }
     }
