@@ -7,14 +7,9 @@ pipeline {
 
     options {
         skipDefaultCheckout(false)
+        disableConcurrentBuilds()
         timestamps()
     }
-
-    options {
-    disableConcurrentBuilds()
-    timestamps()
-    }
-
 
     environment {
         APP_NAME     = "ems"
