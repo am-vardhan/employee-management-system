@@ -11,12 +11,14 @@ pipeline {
     }
 
     environment {
-        APP_NAME   = "ems"
-        IMAGE_NAME = "ems-tomcat"
-        VERSION    = "0.0.1-SNAPSHOT"
-        CONTAINER  = "ems-docker-app"
-        BRANCH_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-    }
+    APP_NAME   = "ems"
+    IMAGE_NAME = "ems-tomcat"
+    VERSION    = "0.0.1-SNAPSHOT"
+    REGISTRY   = "localhost:8083"
+    REPO       = "docker-hosted"
+    IMAGE_TAG  = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+}
+
 
     stages {
 
@@ -59,6 +61,28 @@ pipeline {
             }
         }
     }
+
+    stage("Docker Build & Push") {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'nexus-docker-creds',
+            usernameVariable: 'NEXUS_USER',
+            passwordVariable: 'NEXUS_PASS'
+        )]) {
+            sh """
+            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+
+            docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
+              ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+
+            echo "$NEXUS_PASS" | docker login ${REGISTRY} -u "$NEXUS_USER" --password-stdin
+
+            docker push ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+            """
+        }
+    }
+}
+
 
     post {
         success {
