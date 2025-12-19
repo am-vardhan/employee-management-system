@@ -13,7 +13,7 @@ pipeline {
     environment {
         APP_NAME   = "ems"
         IMAGE_NAME = "ems-tomcat"
-        REGISTRY   = "localhost:8083"
+        REGISTRY   = "localhost:8084"
         REPO       = "docker-hosted"
         IMAGE_TAG  = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
     }
