@@ -1,13 +1,11 @@
-From tomcat:10.1-jdk17
+FROM tomcat:10.1-jdk17
 
-#Remove Default apps
+# Remove default webapps
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-Run rm -rf usr/local/tomcat/webapps/*
-
-#copy WAR into tomcat
-
+# Copy WAR into Tomcat
 COPY target/ems-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ems.war
 
 EXPOSE 8080
 
-CMD ["catalina.sh" , "RUN"]
+CMD ["catalina.sh", "run"]
