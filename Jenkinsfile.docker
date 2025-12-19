@@ -11,14 +11,12 @@ pipeline {
     }
 
     environment {
-    APP_NAME   = "ems"
-    IMAGE_NAME = "ems-tomcat"
-    VERSION    = "0.0.1-SNAPSHOT"
-    REGISTRY   = "localhost:8083"
-    REPO       = "docker-hosted"
-    IMAGE_TAG  = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-}
-
+        APP_NAME   = "ems"
+        IMAGE_NAME = "ems-tomcat"
+        REGISTRY   = "localhost:8083"
+        REPO       = "docker-hosted"
+        IMAGE_TAG  = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+    }
 
     stages {
 
@@ -35,12 +33,25 @@ pipeline {
             }
         }
 
-        stage("Docker Build") {
+        stage("Docker Build & Push") {
             steps {
-                sh """
-                docker build -t ${IMAGE_NAME}:${BRANCH_TAG} .
-                docker tag ${IMAGE_NAME}:${BRANCH_TAG} ${IMAGE_NAME}:latest
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus-docker-creds',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
+                      ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+
+                    echo "\$NEXUS_PASS" | docker login ${REGISTRY} \
+                      -u "\$NEXUS_USER" --password-stdin
+
+                    docker push ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                }
             }
         }
 
@@ -50,43 +61,21 @@ pipeline {
             }
             steps {
                 sh """
-                docker stop ${CONTAINER} || true
-                docker rm ${CONTAINER} || true
+                docker stop ems-docker-app || true
+                docker rm ems-docker-app || true
 
                 docker run -d \
-                  --name ${CONTAINER} \
+                  --name ems-docker-app \
                   -p 8083:8080 \
-                  ${IMAGE_NAME}:latest
+                  ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
                 """
             }
         }
     }
 
-    stage("Docker Build & Push") {
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'nexus-docker-creds',
-            usernameVariable: 'NEXUS_USER',
-            passwordVariable: 'NEXUS_PASS'
-        )]) {
-            sh """
-            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-
-            docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
-              ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-
-            echo "$NEXUS_PASS" | docker login ${REGISTRY} -u "$NEXUS_USER" --password-stdin
-
-            docker push ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-            """
-        }
-    }
-}
-
-
     post {
         success {
-            echo "✅ Docker image built: ${IMAGE_NAME}:${BRANCH_TAG}"
+            echo "✅ Docker image pushed to Nexus: ${IMAGE_TAG}"
             echo "➡ http://localhost:8083/ems"
         }
         failure {
