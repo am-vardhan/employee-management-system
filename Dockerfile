@@ -10,4 +10,4 @@ COPY target/ems-0.0.1-SNAPSHOT.war /usr/local/tomcat/webapps/ems.war
 
 EXPOSE 8080
 
-CMD ["catalina.sh" , "run"]
+CMD ["catalina.sh" , "RUN"]

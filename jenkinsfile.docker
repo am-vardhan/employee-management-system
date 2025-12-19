@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "M3"
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    environment {
+        APP_NAME   = "ems"
+        IMAGE_NAME = "ems-tomcat"
+        VERSION    = "0.0.1-SNAPSHOT"
+        CONTAINER  = "ems-docker-app"
+    }
+
+    stages {
+
+        stage("Checkout") {
+            steps {
+                echo "Docker pipeline for branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
+        stage("Build WAR") {
+            steps {
+                sh "mvn -B clean package -DskipTests"
+            }
+        }
+
+        stage("Docker Build") {
+            steps {
+                sh """
+                docker build -t ${IMAGE_NAME}:${VERSION} .
+                docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest
+                """
+            }
+        }
+
+        stage("Run Docker Container (develop only)") {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh """
+                docker stop ${CONTAINER} || true
+                docker rm ${CONTAINER} || true
+
+                docker run -d \
+                  --name ${CONTAINER} \
+                  -p 8083:8080 \
+                  ${IMAGE_NAME}:latest
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Docker-based EMS application is running"
+            echo "➡ http://localhost:8083/ems"
+        }
+        failure {
+            echo "❌ Docker pipeline failed"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
