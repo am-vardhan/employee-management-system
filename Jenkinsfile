@@ -60,6 +60,8 @@ pipeline {
                         group_id    : env.GROUP_ID,
                         artifact_id : env.ARTIFACT_ID,
                         version     : env.VERSION,
+                        nexus_user  : 'nexus-deploy',
+                        nexus_pass  : env.NEXUS_PASS,
                         branch_name : env.BRANCH_NAME
                     ]
                 )
