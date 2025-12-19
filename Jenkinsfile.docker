@@ -33,27 +33,19 @@ pipeline {
             }
         }
 
-        stage("Docker Build & Push") {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'nexus-creds',
-                    usernameVariable: 'NEXUS_USER',
-                    passwordVariable: 'NEXUS_PASS'
-                )]) {
-                    sh """
-                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+  stage("Docker Build & Push") {
+    steps {
+        withCredentials([string(credentialsId: 'nexus-docker-pass', variable: 'NEXUS_PASS')]) {
+            sh '''
+              docker build -t ems-tomcat:${IMAGE_TAG} .
+              docker tag ems-tomcat:${IMAGE_TAG} ${REGISTRY}/docker-hosted/ems-tomcat:${IMAGE_TAG}
 
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
-                      ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                    echo "\$NEXUS_PASS" | docker login ${REGISTRY} \
-                      -u "\$NEXUS_USER" --password-stdin
-
-                    docker push ${REGISTRY}/${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-                    """
-                }
-            }
+              echo "$NEXUS_PASS" | docker login ${REGISTRY} -u nexus-deploy --password-stdin
+              docker push ${REGISTRY}/docker-hosted/ems-tomcat:${IMAGE_TAG}
+            '''
         }
+    }
+}
 
         stage("Run Docker Container (develop only)") {
             when {
