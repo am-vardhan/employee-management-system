@@ -43,29 +43,30 @@ pipeline {
         }
 
         stage("Deploy to Tomcat (Auto for develop)") {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo "Auto deploying develop branch from Nexus..."
+    when {
+        branch 'develop'
+    }
+    steps {
+        echo "Auto deploying develop branch from Nexus..."
 
-                ansiblePlaybook(
-                    playbook: "/opt/ansible/deploy-tomcat.yml",
-                    inventory: "/opt/ansible/hosts",
-                    become: true,
-                    becomeUser: "root",
-                    extraVars: [
-                        nexus_url   : env.NEXUS_URL,
-                        nexus_repo  : env.NEXUS_REPO,
-                        group_id    : env.GROUP_ID,
-                        artifact_id : env.ARTIFACT_ID,
-                        version     : env.VERSION,
-                        nexus_user  : 'nexus-deploy',
-                        nexus_pass  : env.NEXUS_PASS,
-                        branch_name : env.BRANCH_NAME
-                    ]
-                )
-            }
+        withCredentials([string(credentialsId: 'nexus-maven-pass', variable: 'NEXUS_PASS')]) {
+
+            ansiblePlaybook(
+                playbook: "/opt/ansible/deploy-tomcat.yml",
+                inventory: "/opt/ansible/hosts",
+                become: true,
+                becomeUser: "root",
+                extraVars: [
+                    nexus_url   : env.NEXUS_URL,
+                    nexus_repo  : env.NEXUS_REPO,
+                    group_id    : env.GROUP_ID,
+                    artifact_id : env.ARTIFACT_ID,
+                    version     : env.VERSION,
+                    nexus_user  : 'nexus-deploy',
+                    nexus_pass  : env.NEXUS_PASS,   // ✅ now defined
+                    branch_name : env.BRANCH_NAME
+                ]
+            )
         }
     }
 }
